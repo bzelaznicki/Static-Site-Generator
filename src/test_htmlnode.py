@@ -1,5 +1,5 @@
 import unittest
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 class  TestHTMLNode(unittest.TestCase):
     def setUp(self):
@@ -40,6 +40,14 @@ class  TestHTMLNode(unittest.TestCase):
         self.assertEqual(node, expected_response)
     def test_leaf_node_value_none(self):
         with self.assertRaises(ValueError):
-            LeafNode("p", None).to_html()     
+            LeafNode("p", None).to_html()
+    def test_leaf_node_img_generation(self):
+        node = LeafNode("img", None, None)
+    
+        with self.assertRaises(ValueError) as context:
+            node.to_html()
+        
+        # Optional: Verify the exception message
+        self.assertEqual(str(context.exception), "The props cannot be empty!")
 if __name__ == "__main__":
     unittest.main()

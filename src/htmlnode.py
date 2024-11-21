@@ -24,10 +24,31 @@ class LeafNode(HTMLNode):
         def __init__(self, tag, value, props=None):
             super().__init__(tag, value, None, props)
         def to_html(self):  
-            if self.value == None:
+            props_string = self.props_to_html()
+            if self.value == None and self.tag != "img":
                 raise ValueError("All leaf nodes must have a value")      
             if self.tag == None or self.tag == "":
                 return self.value
+            if self.tag == "img":
+                if len(props_string) == 0:
+                    raise ValueError("The props cannot be empty!")
+                return f'<{self.tag}{props_string} />'
             
-            props_string = self.props_to_html()
+            
             return f'<{self.tag}{props_string}>{self.value}</{self.tag}>'
+class ParentNode(HTMLNode):
+    
+    def __init__(self, tag, children, props=None):
+        super().__init__(tag, None, children, props)
+    
+    def to_html(self):
+        if self.tag == None or self.tag == "":
+            raise ValueError("All ParentNodes must have a tag")
+        if self.children == None or len(self.children) == 0: 
+            raise ValueError("Children cannot be empty")
+        props_string = self.props_to_html()
+        children_html = ""
+        for child in self.children:
+            children_html += child.to_html()
+        html_string = f'<{self.tag}{props_string}>{children_html}</{self.tag}>'
+        return html_string
