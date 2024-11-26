@@ -42,27 +42,7 @@ def extract_markdown_links(text):
     links_list = [match for match in all_matches if match[1]]
     return links_list
 
-def extract_markdown_bolds(text):
 
-    all_matches = re.findall(r"\*\*([^\*]+)\*\*", text)
-    return all_matches
-
-def extract_markdown_italics(text):
-    all_matches = re.findall(r"(\*[^*]+\*)|(_[^_]+_)", text)
-    italics_nodes = [
-        TextNode(m.strip("*_"), TextType.ITALIC)
-        for match in all_matches
-        for m in match if m  # Check that m is not an empty string
-    ]
-    return italics_nodes
-
-def extract_markdown_codes(text):
-    all_matches = re.findall(r"`([^`]+)`", text)
-    code_nodes = [
-        TextNode(m, TextType.CODE)
-        for m in all_matches if m  # Check that m is not an empty string
-    ]
-    return code_nodes
 
 def split_nodes_image(old_nodes):
     new_nodes = []
@@ -131,6 +111,7 @@ def text_to_textnodes(text):
 def markdown_to_blocks(markdown):
     new_blocks = []
     temp_block = ""
+    
 
     for line in markdown.splitlines():
         if line.strip():
@@ -147,3 +128,53 @@ def markdown_to_blocks(markdown):
 
     return new_blocks
 
+def block_to_block_type(block):
+    block_lines = block.splitlines()
+    if block.startswith("```") and block.endswith("```"):
+        return "code"
+    
+    if block.startswith('#'):
+        original_length = len(block)
+        stripped = block.lstrip('#')
+        hash_count = original_length - len(stripped)
+
+        if hash_count > 0 and hash_count <= 6 and stripped.startswith(" "): 
+            return "heading"
+
+    if block.startswith('>'):
+        its_a_quote = True
+        for line in block_lines:
+            if not line.startswith(">"):
+                its_a_quote = False
+                break
+        if its_a_quote:
+            return "quote"
+        
+    
+    if block.startswith("* ") or block.startswith("- "):
+
+        its_a_list = True
+        for line in block_lines:
+            if not line.startswith("* ") and not line.startswith("- "):
+                its_a_list = False
+                break
+        if its_a_list:
+            return "unordered_list"
+
+    is_ordered_list = True
+
+    if len(block) == 0:
+        is_ordered_list = False
+    for index, line in enumerate(block_lines):
+        expected_number = index + 1
+    # check if line starts with the expected number followed by ". "
+        if not line.startswith(str(expected_number) + ". "):
+            is_ordered_list = False
+            break
+
+    if is_ordered_list:
+        return "ordered_list"
+    
+    
+    
+    return "paragraph"

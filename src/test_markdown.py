@@ -272,6 +272,79 @@ End paragraph.
     
     def test_empty_document(self):
         md = ""
-        self.assertEqual(markdown_to_blocks(md), [])    
+        self.assertEqual(markdown_to_blocks(md), []) 
+
+class TestBlockTypes(unittest.TestCase):
+    def test_basic_paragraph(self):
+        block = "This is a simple paragraph"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+
+    def test_heading(self):
+        block = "## Second level heading"
+        self.assertEqual(block_to_block_type(block), "heading")
+    
+    def test_invalid_heading(self):
+        block = "##No space after hashtags"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+
+    def test_code_block(self):
+        block = "```\nprint('hello')\n```"
+        self.assertEqual(block_to_block_type(block), "code")
+
+    def test_unordered_list(self):
+        block = "* First item\n* Second item"
+        self.assertEqual(block_to_block_type(block), "unordered_list")
+
+    def test_ordered_list_thats_not_ordered(self):
+        block = "1. First item\n3. Second item\n2. Third item"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+    def test_multiline_quote(self):
+        block = "> This is a quote\n> that spans multiple lines\n> and keeps going"
+        self.assertEqual(block_to_block_type(block), "quote")
+
+    def test_heading_too_many_spaces(self):
+        block = "#       # Too many spaces after hash"
+        self.assertEqual(block_to_block_type(block), "heading")
+    
+    def test_not_quite_a_list(self):
+        block = "1. Not a list\nSomething else\n3. More stuff"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+    
+    def test_mixed_style_unordered_list(self):
+        block = "* First item\n- Mixed markers\n* Third item"
+        self.assertEqual(block_to_block_type(block), "unordered_list")
+    
+    def test_empty_block(self):
+        block = ""
+        self.assertEqual(block_to_block_type(block), "paragraph")
+    
+    def test_code_on_the_same_line(self):
+        block = '```print("hello")```'
+        self.assertEqual(block_to_block_type(block), "code")
+
+    def test_block_that_looks_like_a_list_but_isnt(self):
+        block = "* First item\nplain text line\n* Last item"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+    
+    def test_block_with_some_quotes(self):
+        block = "> First item\nplain text line\n> Last item"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+
+    def test_heading_with_no_content(self):
+        block = "#"
+        self.assertEqual(block_to_block_type(block), "paragraph")  # Should be paragraph because # must be followed by a space
+    def test_invalid_ordered_list_start(self):
+        block = "2. First\n3. Second\n4. Third"
+        self.assertEqual(block_to_block_type(block), "paragraph")  # Should be paragraph because ordered lists must start at 1    
+    def test_mixed_list_markers(self):
+        block = "1. First\n* Second\n3. Third"
+        self.assertEqual(block_to_block_type(block), "paragraph")
+    
+    def test_ordered_list_with_spaces(self):
+        block = "1. First    \n2.    Second\n3. Third"
+        self.assertEqual(block_to_block_type(block), "ordered_list")
+    def test_missing_spaces(self):
+        block = "1.First\n2.Second\n3.Third"
+        self.assertEqual(block_to_block_type(block), "paragraph")
 if __name__ == '__main__':
     unittest.main()
