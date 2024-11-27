@@ -320,7 +320,7 @@ class TestBlockTypes(unittest.TestCase):
     
     def test_code_on_the_same_line(self):
         block = '```print("hello")```'
-        self.assertEqual(block_to_block_type(block), "code")
+        self.assertEqual(block_to_block_type(block), "paragraph")
 
     def test_block_that_looks_like_a_list_but_isnt(self):
         block = "* First item\nplain text line\n* Last item"
@@ -346,5 +346,63 @@ class TestBlockTypes(unittest.TestCase):
     def test_missing_spaces(self):
         block = "1.First\n2.Second\n3.Third"
         self.assertEqual(block_to_block_type(block), "paragraph")
+
+class TestMarkDownConversions(unittest.TestCase):
+
+    def test_simple_paragraph(self):
+        markdown = "Hello world"
+        self.assertEqual(markdown_to_html_node(markdown).to_html(), "<div><p>Hello world</p></div>")
+
+    def test_more_paragraphs(self):
+        markdown = """
+# Header
+
+This is a paragraph.
+
+* List item 1
+* List item 2
+"""
+        self.assertEqual(markdown_to_html_node(markdown).to_html(), "<div><h1>Header</h1><p>This is a paragraph.</p><ul><li>List item 1</li><li>List item 2</li></ul></div>")
+    
+class TestMarkdownToBlocks(unittest.TestCase):
+    
+    def test_basic_text(self):
+        markdown = "This is a simple text."
+        expected_blocks = ["This is a simple text."]
+        self.assertEqual(markdown_to_blocks(markdown), expected_blocks)
+
+    def test_single_code_block(self):
+        markdown = "```\ndef func():\n    pass\n```"
+        expected_blocks = ["```\ndef func():\n    pass\n```"]
+        self.assertEqual(markdown_to_blocks(markdown), expected_blocks)
+
+    def test_mixed_content(self):
+        markdown = "Paragraph text.\n```\ncode block\n```\nMore text."
+        expected_blocks = ["Paragraph text.", "```\ncode block\n```", "More text."]
+        self.assertEqual(markdown_to_blocks(markdown), expected_blocks)
+
+    def test_single_line_paragraph(self):
+        example = "This is a single line paragraph."
+        expected = ["This is a single line paragraph."]
+        result = markdown_to_blocks(example)
+        self.assertEqual(result, expected)
+
+    def test_nested_code_block(self):
+        example = (
+            "```"
+            "def example():"
+            '    return "Markdown!"'
+            "```"
+        )
+        expected = [
+            "```"
+            "def example():"
+            '    return "Markdown!"'
+            "```"
+        ]
+        result = markdown_to_blocks(example)
+        self.assertEqual(result, expected)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -111,12 +111,28 @@ def text_to_textnodes(text):
 def markdown_to_blocks(markdown):
     new_blocks = []
     temp_block = ""
-    
+    in_code_block = False
 
     for line in markdown.splitlines():
-        if line.strip():
-            # Accumulate lines with newline or space
-            temp_block += line.strip() + "\n"
+        if line.startswith('```'):
+            if len(temp_block) > 0 and not in_code_block:
+                new_blocks.append(temp_block.strip())
+                temp_block = ""
+            in_code_block = not in_code_block
+            # Add the delimiter back into the temp_block
+            temp_block += line + "\n"
+            # If closing a code block, append the block now
+            if not in_code_block:
+                new_blocks.append(temp_block.strip())
+                temp_block = ""
+            continue
+        if line.strip() or in_code_block:
+    # If not in a code block, trim spaces from the line
+            if not in_code_block:
+                temp_block += line.strip() + "\n"
+            else:
+                temp_block += line + "\n"
+
         else:
             if temp_block.strip():
                 new_blocks.append(temp_block.strip())
@@ -130,7 +146,7 @@ def markdown_to_blocks(markdown):
 
 def block_to_block_type(block):
     block_lines = block.splitlines()
-    if block.startswith("```") and block.endswith("```"):
+    if len(block_lines) > 1 and block_lines[0].startswith("```") and block_lines[-1].startswith("```"):
         return "code"
     
     if block.startswith('#'):
@@ -161,10 +177,9 @@ def block_to_block_type(block):
         if its_a_list:
             return "unordered_list"
 
+    if len(block_lines) == 0:
+        return "paragraph"
     is_ordered_list = True
-
-    if len(block) == 0:
-        is_ordered_list = False
     for index, line in enumerate(block_lines):
         expected_number = index + 1
     # check if line starts with the expected number followed by ". "
@@ -178,3 +193,71 @@ def block_to_block_type(block):
     
     
     return "paragraph"
+
+def text_to_children(text):
+    text_nodes = text_to_textnodes(text)
+    converted_nodes = []
+    for node in text_nodes:
+        converted_nodes.append(node.text_node_to_html_node())
+    
+    return converted_nodes
+
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    parent_node = ParentNode("div", [])
+
+    for block in blocks:
+        blocktype = block_to_block_type(block)
+        
+        match(blocktype):
+            case "paragraph":
+                children = text_to_children(block)
+                new_node = ParentNode("p", children)
+                parent_node.children.append(new_node)
+            
+            case "heading":
+                original_length = len(block)
+                stripped = block.lstrip('#')
+                hash_count = original_length - len(stripped)
+                children = text_to_children(stripped.lstrip())
+                new_node = ParentNode(f"h{hash_count}", children)
+                parent_node.children.append(new_node)
+            
+            case "quote":
+                stripped = block.lstrip('>')
+                stripped = stripped.lstrip()
+                children = text_to_children(stripped)
+                new_node = ParentNode("blockquote", children)
+                parent_node.children.append(new_node)
+            
+            case "code":
+                code_lines = block.splitlines()
+                code_content = code_lines[1:-1]
+                stripped = "\n".join(code_content)
+                code_html = LeafNode(None, stripped)
+                code_node = [ParentNode("code", [code_html])]
+                pre_node = ParentNode("pre", code_node)
+                parent_node.children.append(pre_node)
+            
+            case "unordered_list":
+                lines = block.splitlines()
+                li_nodes = []
+                for line in lines:
+                    converted = text_to_children(line.lstrip("* "))
+                    li_nodes.append(ParentNode("li", converted))
+                ul_node = ParentNode("ul", li_nodes)
+                parent_node.children.append(ul_node)
+            
+            case "ordered_list":
+                lines = block.splitlines()
+                li_nodes = []
+                for index, line in enumerate(lines):
+                    converted = text_to_children(line.lstrip(f"{index + 1}. "))
+                    li_nodes.append(ParentNode("li", converted))
+                ol_node = ParentNode("ol", li_nodes)
+                parent_node.children.append(ol_node)
+
+
+
+    
+    return parent_node
