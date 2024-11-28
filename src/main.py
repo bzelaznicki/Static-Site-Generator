@@ -9,6 +9,6 @@ def main():
     source_path = generate_static_files_list("static/")
     copy_static_to_public(source_path, "public/")
 
-    generate_page("content/index.md", "template.html", "public/index.html")
+    generate_pages_recursive("content", "template.html", "public")
 
 main()

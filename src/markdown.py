@@ -224,9 +224,14 @@ def markdown_to_html_node(markdown):
                 parent_node.children.append(new_node)
             
             case "quote":
-                stripped = block.lstrip('>')
-                stripped = stripped.lstrip()
-                children = text_to_children(stripped)
+                lines = block.split("\n")
+                new_lines = []
+                for line in lines:
+                    if not line.startswith(">"):
+                        raise ValueError("Invalid quote block")
+                new_lines.append(line.lstrip(">").strip())
+                content = " ".join(new_lines)
+                children = text_to_children(content)
                 new_node = ParentNode("blockquote", children)
                 parent_node.children.append(new_node)
             
